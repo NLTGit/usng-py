@@ -37,7 +37,6 @@ setup(
     install_requires=[
     ],
     entry_points={
-        'console_scripts': ['usng=usng-py:main'],
     }
 
 )
