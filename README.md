@@ -63,3 +63,7 @@ for most purposes, these five function calls are the only things an application 
 
 Note regarding UTM coordinates: UTM calculations are an intermediate step in lat/lng-USNG conversions, and can also be captured by applications, using functions below that are not summarized in the above list. The functions in this module use negative numbers for UTM Y values in the southern hemisphere. The calling application must check for this, and convert to correct southern-hemisphere values by adding 10,000,000 meters.
 
+
+=============
+
+python3 setup.py sdist bdist_wheel

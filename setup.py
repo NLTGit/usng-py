@@ -14,7 +14,7 @@ with open('README.md') as f:
 with open('LICENSE') as f:
     license = f.read()
 
-with open('usng-py/__init__.py', 'rt') as v:
+with open('pyusng/__init__.py', 'rt') as v:
     for row in v:
         version = None
         if row.startswith('__version__ = '):
@@ -25,7 +25,7 @@ with open('usng-py/__init__.py', 'rt') as v:
         f.write(version)
 
 setup(
-    name='usng-py',
+    name='pyusng',
     version=version,
     description='Pure PYthon tool to compute USNG coordinates from Latitude/Longitude',
     long_description=readme,
@@ -37,6 +37,11 @@ setup(
     install_requires=[
     ],
     entry_points={
-    }
+    },
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: AGPL License",
+        "Operating System :: OS Independent",
+    ]
 
 )

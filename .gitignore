@@ -1,5 +1,8 @@
-build
-dist
+build/
+dist/
 *pyo
 *pyc
 *.egg-info
+.vscode
+.pycharm
+tmp/

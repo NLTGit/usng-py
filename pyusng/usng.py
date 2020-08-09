@@ -190,6 +190,42 @@ E1 = (1 - math.sqrt(1 - ECC_SQUARED)) / (1 + math.sqrt(1 - ECC_SQUARED))
 #  Five digits:  1 meter precision    eg. "18S UJ 23480 06470"
 
 
+class USNG():
+	zone = 0
+	letter = ''
+	sq1 = ''
+	sq2 = ''
+
+	precision = 0
+	east = ''
+	north = ''
+
+	def __init__(self):
+		pass
+
+	def __repr__(self):
+		return "{z:0.2d}{let} {es}{ns} {ec}{nc}".format(z=self.zone, \
+			let=self.letter, es=self.sq1, ns=self.sq2, \
+			ec=self.east, nc=self.north)
+
+class LL():
+	lat = ''
+	lon = ''
+
+	def __init__(self):
+		pass
+
+class UTM():
+	E = 0.0
+	N = 0.0
+	zone = 0
+	letter = ''
+
+	def __init__(self):
+		pass
+
+	def __repr__(self):
+		return "{z}{l} {x} {y}".format(y=self.E, x=self.N, z=self.zone, l=self.letter)
 
 #/************* retrieve zone number from latitude, longitude *************
     # Zone number ranges from 1 - 60 over the range [-180 to +180]. Each
@@ -204,7 +240,7 @@ def getZoneNumber(lat, lon):
 	# sanity check on input
 	#//////////////////////////////   /*
 	if lon > 360 or lon < -180 or lat > 90 or lat < -90:
-		print "Bad input. lat: %s lon: %s" % (lat,lon)
+		print("Bad input. lat: %s lon: %s" % (lat,lon))
 	#//////////////////////////////  */
 
 	# convert 0-360 to [-180 to 180] range
@@ -259,7 +295,7 @@ def LLtoUTM_alt(lat,lon,utmcoords=None,zone=None):
 	# sanity check on input - turned off when testing with Generic Viewer
 	#///////////////////  /*
 	if lon > 360 or lon < -180 or lat > 90 or lat < -90:
-		print "Bad input. lat: %s lon: %s" % (lat,lon)
+		print("Bad input. lat: %s lon: %s" % (lat,lon))
 	#////////////////////  */
 
 	# Make sure the longitude is between -180.00 .. 179.99..
@@ -305,7 +341,7 @@ def LLtoUTM_alt(lat,lon,utmcoords=None,zone=None):
 	utm['e'] = UTMEasting
 	utm['n'] = UTMNorthing
 	utm['z'] = zoneNumber
-	return "%s-%s-%s" % (UTMEasting, UTMNorthing, zoneNumber)
+	return "%s:%s:%s" % (UTMEasting, UTMNorthing, zoneNumber)
 # end LLtoUTM
 
 
@@ -323,14 +359,14 @@ def LLtoUTM_alt(lat,lon,utmcoords=None,zone=None):
 
 # ***************************************************************************/
 
-def LLtoUSNG(lat, lon, precision):
+def LLtoUSNG(lat, lon, precision=6):
 
 	lat = float(lat)
 	lon = float(lon)
 
 	# convert lat/lon to UTM coordinates
 	ut = LLtoUTM_alt(lat, lon)
-	utm = ut.split('-')
+	utm = ut.split(':')
 	try:
 		UTMEasting = float(utm[0]) 
 		UTMNorthing = float(utm[1])
@@ -352,12 +388,12 @@ def LLtoUSNG(lat, lon, precision):
 	# added... truncate digits to achieve specified precision
 	USNGNorthing = math.floor(USNGNorthing / math.pow(10,(5-precision)))
 	USNGEasting = math.floor(USNGEasting / math.pow(10,(5-precision)))
-	USNG = "%s%s %s " % (getZoneNumber(lat, lon),UTMLetterDesignator(lat),USNGLetters)
+	USNG = "{z:02d}{l} {gc} ".format(z=getZoneNumber(lat, lon),l=UTMLetterDesignator(lat),gc=USNGLetters)
 
 	# REVISIT: Modify to incorporate dynamic precision ?
 	USNGEasting = ('%s' % int(USNGEasting)).zfill(precision)
 	USNGNorthing = ('%s' % int(USNGNorthing)).zfill(precision)
-	USNG = "%s %s %s" % (USNG, USNGEasting, USNGNorthing)
+	USNG = "%s%s%s" % (USNG, USNGEasting, USNGNorthing)
 
 	return USNG
 	# END LLtoUSNG() function
@@ -559,11 +595,12 @@ def lettersHelper(set, row, col):
 # ***************************************************************************/
 
 def UTMtoLL(UTMNorthing, UTMEasting, UTMZoneNumber, ret):
+	ret = LL()
 
 	# remove 500,000 meter offset for longitude
-	xUTM = parseFloat(UTMEasting) - EASTING_OFFSET
-	yUTM = parseFloat(UTMNorthing)
-	zoneNumber = parseInt(UTMZoneNumber)
+	xUTM = float(UTMEasting) - EASTING_OFFSET
+	yUTM = float(UTMNorthing)
+	zoneNumber = int(UTMZoneNumber)
 
 	# origin longitude for the zone (+3 puts origin in zone center) 
 	lonOrigin = (zoneNumber - 1) * 6 - 180 + 3 
@@ -573,7 +610,7 @@ def UTMtoLL(UTMNorthing, UTMEasting, UTMZoneNumber, ret):
 	M = yUTM / k0
 	mu = M / ( EQUATORIAL_RADIUS * (1 - ECC_SQUARED / 4 - 3 * ECC_SQUARED * ECC_SQUARED / 64 - 5 * ECC_SQUARED * ECC_SQUARED * ECC_SQUARED / 256 ))
 
-	# phi1 is the "footprint latitude" or the latitude at the central meridian which
+	# phi1 is the "footprint(latitude" or the latitude at the central meridian which
 	# has the same y coordinate as that of the point (phi (lat), lambda (lon) ).
 	phi1Rad = mu + (3 * E1 / 2 - 27 * E1 * E1 * E1 / 32 ) * math.sin( 2 * mu) + ( 21 * E1 * E1 / 16 - 55 * E1 * E1 * E1 * E1 / 32) * math.sin( 4 * mu) + (151 * E1 * E1 * E1 / 96) * math.sin(6 * mu)
 	phi1 = phi1Rad * RAD_2_DEG
@@ -610,7 +647,7 @@ USNGSqLetOdd="ABCDEFGHJKLMNPQRSTUV"
 USNGSqLetEven="FGHJKLMNPQRSTUVABCDE"
 # /*********************************************************************************** 
 
-                   # USNGtoUTM(zone,let,sq1,sq2,east,north,ret) 
+# USNGtoUTM(zone,let,sq1,sq2,east,north)
 # Expected Input args:
       # zone: Zone (integer), eg. 18
       # let: Zone letter, eg S
@@ -620,9 +657,24 @@ USNGSqLetEven="FGHJKLMNPQRSTUVABCDE"
       # north:  Northing digit string eg 4000
       # ret:  saves zone,let,Easting and Northing as properties ret 
 
+
 # ***********************************************************************************/ 
 
-def USNGtoUTM(zone,let,sq1,sq2,east,north,ret):
+def USNGtoUTM(zone,let=None,sq1=None,sq2=None,east=None,north=None):
+	if let is None:
+		zone = zone.replace(' ', '')
+		## parse the USNG String into components
+		let = zone[2]
+		sq1 = zone[3]
+		sq2 = zone[4]
+		prec = int((len(zone) - 5) / 2) 
+		east = zone[5:5+prec]
+		north = zone[5+prec:]
+		zone = int(zone[:2])
+
+	ret = UTM()
+	# for the zone to be a string
+	zone = int(zone)
 
 	#Starts (southern edge) of N-S zones in millons of meters
 	zoneBase = [1.1,2.0,2.9,3.8,4.7,5.6,6.5,7.3,8.2,9.1,   0, 0.8, 1.7, 2.6, 3.5, 4.4, 5.3, 6.2, 7.0, 7.9]
@@ -630,25 +682,28 @@ def USNGtoUTM(zone,let,sq1,sq2,east,north,ret):
 	segBase = [0,2,2,2,4,4,6,6,8,8,   0,0,0,2,2,4,4,6,6,6]  #Starts of 2 million meter segments, indexed by zone 
 
 	# convert easting to UTM
-	eSqrs=USNGSqEast.indexOf(sq1)         
+	eSqrs=USNGSqEast.index(sq1)         
 	appxEast=1+eSqrs%8 
 
 	# convert northing to UTM
-	letNorth = "CDEFGHJKLMNPQRSTUVWX".indexOf(let)
+	letNorth = "CDEFGHJKLMNPQRSTUVWX".index(let)
 	if (zone%2):  #odd number zone
-		nSqrs="ABCDEFGHJKLMNPQRSTUV".indexOf(sq2) 
+		nSqrs="ABCDEFGHJKLMNPQRSTUV".index(sq2) 
 	else:        # even number zone
-		nSqrs="FGHJKLMNPQRSTUVABCDE".indexOf(sq2)
+		nSqrs="FGHJKLMNPQRSTUVABCDE".index(sq2)
 
 	zoneStart = zoneBase[letNorth]
-	appxNorth = Number(segBase[letNorth])+nSqrs/10
+	appxNorth = int(segBase[letNorth])+nSqrs/10
 	if ( appxNorth < zoneStart):
 		appxNorth += 2
 
-	ret.N=appxNorth*1000000+Number(north)*math.pow(10,5-north.length)
-	ret.E=appxEast*100000+Number(east)*math.pow(10,5-east.length)
+	ret.N=appxNorth*1000000+int(north)*math.pow(10,5-len(north))
+	ret.E=appxEast*100000+int(east)*math.pow(10,5-len(east))
 	ret.zone=zone
-	ret.letter=let
+	if ret.N >= 0:
+		ret.letter='N'
+	else:
+		ret.letter = 'S'
 
 	return ret
 
@@ -656,66 +711,55 @@ def USNGtoUTM(zone,let,sq1,sq2,east,north,ret):
 
 
 # parse a USNG string and feed results to USNGtoUTM, then the results of that to UTMtoLL
-def USNGtoLL(usngStr_input,latlon):
-	# latlon is a 2-element array declared by calling routine
-
-	#  js version::: usngp = new Object();
-	usngp = parseUSNG_str(usngStr_input,usngp)
+def USNGtoLL(usngStr_input):
+	usngp = parseUSNG_str(usngStr_input)
+	coords = UTM()
+	latlon = []
 
 	# convert USNG coords to UTM; this routine counts digits and sets precision
 	#  js version:::: coords = new Object()
-	coords = USNGtoUTM(usngp.zone,usngp.let,usngp.sq1,usngp.sq2,usngp.east,usngp.north,coords)
+	coords = USNGtoUTM(usngp.zone,usngp.letter,usngp.sq1,usngp.sq2,usngp.east,usngp.north)
 
 	# southern hemisphere case
-	if (usngp.let < 'N'):
+	if (usngp.letter < 'N'):
 		coords.N -= NORTHING_OFFSET
 
 	coords = UTMtoLL(coords.N, coords.E, usngp.zone, coords)
-	latlon[0] = coords.lat
-	latlon[1] = coords.lon
+	latlon = [coords.lat, coords.lon]
 	return latlon
 
 
 # convert lower-case characters to upper case, remove space delimeters, separate string into parts
-def parseUSNG_str(usngStr_input, parts):
+def parseUSNG_str(usngStr_input):
+	parts = USNG()
 
-	j = 4
-	k = None
 	usngStr = []
 	usngStr_temp = []
 
-	usngStr_temp = usngStr_input.toUpperCase()
+	usngStr_temp = usngStr_input.upper()
 
-	# put usgn string in 'standard' form with no space delimiters
-	regexp = '/%20/g'
-	usngStr = usngStr_temp.replace(regexp,"")
-	regexp = '/ /g'
+	# python will be default remove all occurences
+	regexp = '%20'
+	usngStr_temp = usngStr_temp.replace(regexp,"")
+	regexp = ' '
 	usngStr = usngStr_temp.replace(regexp,"")
 
-	if (usngStr.length < 7):
-		print "This application requires minimum USNG precision of 10,000 meters"
+	if (len(usngStr) < 7):
+		print("This application requires minimum USNG precision of 10,000 meters")
 		return 0
 
 	# break usng string into its component pieces
-	parts.zone = usngStr[0]*10 + usngStr[1]*1
-	parts.let = usngStr[2]
+	parts.zone = usngStr[0:2]
+	parts.letter = usngStr[2]
 	parts.sq1 = usngStr[3]
 	parts.sq2 = usngStr[4]
 
-	parts.precision = (len(usngStr)-4) / 2
-	parts.east=''
-	parts.north=''
-	for k in range(0,parts.precision):
-		parts.east += usngStr[j]
-		j += 1
+	parts.precision = int((len(usngStr)-4) / 2)
+	pp = 5
+	parts.east = usngStr[pp:pp+parts.precision]
+	parts.north = usngStr[pp+parts.precision:]
 
-	if (usngStr[j] == " "):
-		j += 1
-
-	for k in range(0,parts.precision):
-		parts.north += usngStr[j]
-		j += 1
-
+	return parts
 
 # checks a string to see if it is valid USNG;
 #    if so, returns the string in all upper case, no delimeters
@@ -727,7 +771,7 @@ def isUSNG(inputStr):
 	strregexp = None
 
 	# convert all letters to upper case
-	usngStr = inputStr.toUpperCase()
+	usngStr = inputStr.upper()
  
 	# get rid of space delimeters
 	regexp = '/%20/g'
@@ -735,20 +779,20 @@ def isUSNG(inputStr):
 	regexp = '/ /g'
 	usngStr = usngStr.replace(regexp,"")
 
-	if (usngStr.length > 15):
+	if (len(usngStr) > 15):
 		return 0
 
 	strregexp = "^[0-9]{2}[CDEFGHJKLMNPQRSTUVWX]$"
 	if (usngStr.match(strregexp)):
-		print "Input appears to be a UTM zone...more precision is required to display a correct result."
+		print("Input appears to be a UTM zone...more precision is required to display a correct result.")
 		return 0
 
 	strregexp = "^[0-9]{2}[CDEFGHJKLMNPQRSTUVWX][ABCDEFGHJKLMNPQRSTUVWXYZ][ABCDEFGHJKLMNPQRSTUV]([0-9][0-9]){0,5}"
 	if ( not usngStr.match(strregexp)):
 		return 0
 
-	if (usngStr.length < 7):
-		print usngStr+" Appears to be a USNG string, but this application requires precision of at least 10,000 meters"
+	if (len(usngStr) < 7):
+		print(usngStr+" Appears to be a USNG string, but this application requires precision of at least 10,000 meters")
 		return 0
 
 	# all tests passed...return the upper-case, non-delimited string
@@ -758,7 +802,7 @@ def isUSNG(inputStr):
 # create a Military Grid Reference System string.  this is the same as a USNG string, but
 #    with no spaces.  space delimiters are optional but allowed in USNG, but are not allowed
 #    in MGRS notation.  but the numbers are the same.
-def LLtoMGRS(lat, lon, precision):
+def LLtoMGRS(lat, lon, precision=6):
 	mgrs_str="";
 	usng_str = LLtoUSNG(lat, lon, precision)
 
@@ -776,7 +820,7 @@ def GUsngtoLL(str):
 	return(GLatLng(latlng[0],latlng[1]))
 
 
-def LLtoUSNG_nad27(lat, lon, precision):
+def LLtoUSNG_nad27(lat, lon, precision=6):
 	# set ellipsoid to Clarke 1866 (meters)
 	EQUATORIAL_RADIUS = 6378206.4  
 	ECC_SQUARED = 0.006768658
